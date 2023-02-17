@@ -10,7 +10,7 @@ from streamlit_extras.metric_cards import style_metric_cards
 
 from data import MODEL_TO_PRICING
 
-INPUT_TYPES = ["Text", "Single Webpage", "PDF", "Online PDF", "Tokens"]
+INPUT_TYPES = ["Text", "Single Webpage", "PDF", "Tokens"]
 
 
 def display_input_zone() -> pd.DataFrame:
@@ -27,9 +27,9 @@ def display_input_zone() -> pd.DataFrame:
     elif selected_input == "PDF":
         data = st.file_uploader("Upload PDF", ["pdf"])
 
-    elif selected_input == "Online PDF":
-        data = st.text_input("Enter URL")
-        st.write("This might take a while...")
+    # elif selected_input == "Online PDF":
+    #     data = st.text_input("Enter URL")
+    #     st.write("This might take a while...")
 
     elif selected_input == "Tokens":
         data = st.number_input("Enter number of tokens", min_value=1)
