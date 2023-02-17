@@ -151,7 +151,7 @@ def set_page_config():
         <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
-            .viewerBadge_container__1QSob {visibility: hidden; display: none;}
+            .viewerBadge_container__1QSob {display: none;}
         </style>
         """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
