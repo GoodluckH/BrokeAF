@@ -119,7 +119,7 @@ def handle_input(data, selected_input):
             model_type,
             model_name,
             MODEL_TO_PRICING[model_type][model_name] *
-            tokens_count_by_model[model_name],
+            tokens_count_by_model[model_name] / 1000,
             tokens_count_by_model[model_name],
         ]
                   for model_type in MODEL_TO_PRICING
