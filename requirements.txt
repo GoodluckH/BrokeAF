@@ -17,6 +17,6 @@ pandas
 numpy
 pypdf
 streamlit_extras
-# unstructured[local-inference]
+unstructured[local-inference]
 # detectron2@git+https://github.com/facebookresearch/detectron2.git@v0.6#egg=detectron2
 # python-poppler
