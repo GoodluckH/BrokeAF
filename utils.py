@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import tiktoken
-from gpt_index import download_loader
-from langchain.document_loaders import OnlinePDFLoader, WebBaseLoader
+from langchain.document_loaders import WebBaseLoader, YoutubeLoader
 from streamlit_extras.buy_me_a_coffee import button
 from streamlit_extras.metric_cards import style_metric_cards
 
@@ -114,16 +113,16 @@ def handle_input(data, selected_input):
             is_error = True
             st.error(e)
 
-    elif selected_input == "Online PDF":
-        try:
-            if data:
-                docs = OnlinePDFLoader(data).load()
-                for doc in docs:
-                    text += doc.page_content
-                tokens_count_by_model = populate_tokens_count(text)
-        except Exception as e:
-            is_error = True
-            st.error(e)
+    # elif selected_input == "Online PDF":
+    #     try:
+    #         if data:
+    #             docs = OnlinePDFLoader(data).load()
+    #             for doc in docs:
+    #                 text += doc.page_content
+    #             tokens_count_by_model = populate_tokens_count(text)
+    #     except Exception as e:
+    #         is_error = True
+    #         st.error(e)
 
     elif selected_input == "Tokens":
         for model_type, _ in MODEL_TO_PRICING.items():
@@ -133,12 +132,11 @@ def handle_input(data, selected_input):
     elif selected_input == "YouTube":
         try:
             if data:
-                YoutubeTranscriptReader = download_loader(
-                    "YoutubeTranscriptReader")
-                loader = YoutubeTranscriptReader()
-                llama_docs = loader.load_data(ytlinks=[data])
-                for doc in llama_docs:
-                    text += doc.text
+                loader = loader = YoutubeLoader.from_youtube_url(
+                    data, add_video_info=False)
+                docs = loader.load()
+                for doc in docs:
+                    text += doc.page_content
                 tokens_count_by_model = populate_tokens_count(text)
         except Exception as e:
             is_error = True
