@@ -4,16 +4,17 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import tiktoken
+from gpt_index import download_loader
 from langchain.document_loaders import OnlinePDFLoader, WebBaseLoader
 from streamlit_extras.buy_me_a_coffee import button
 from streamlit_extras.metric_cards import style_metric_cards
 
 from data import MODEL_TO_PRICING
 
-INPUT_TYPES = ["Text", "Single Webpage", "PDF", "Tokens"]
+INPUT_TYPES = ["Text", "Single Webpage", "PDF", "Tokens", "YouTube"]
 
 
-def display_input_zone() -> pd.DataFrame:
+def display_input_zone():
     st.title("are you too broke for AI?")
     selected_input = st.selectbox("Select a input type", INPUT_TYPES)
 
@@ -22,7 +23,7 @@ def display_input_zone() -> pd.DataFrame:
         data = st.text_area("Paste your text here")
 
     elif selected_input == "Single Webpage":
-        data = st.text_input("Enter URL")
+        data = st.text_input("Enter URL", key="1")
 
     elif selected_input == "PDF":
         data = st.file_uploader("Upload PDF", ["pdf"])
@@ -34,13 +35,22 @@ def display_input_zone() -> pd.DataFrame:
     elif selected_input == "Tokens":
         data = st.number_input("Enter number of tokens", min_value=1)
 
-    if not data:
-        return None
+    elif selected_input == "YouTube":
+        data = st.text_input("Enter URL", key="2")
+
+    if data == "" or data is None:
+        return (None, None)
 
     st.markdown("""---""")
     with st.spinner("figuring out how much you gonna owe..."):
-        df = handle_input(data, selected_input)
-    return df
+        (df, text) = handle_input(data, selected_input)
+    return (df, text)
+
+
+def display_parsed_text(text):
+    if text:
+        with st.expander("**Parsed Text**"):
+            st.write(text)
 
 
 def display_pricing_zone(df: pd.DataFrame):
@@ -65,20 +75,24 @@ def display_pricing_zone(df: pd.DataFrame):
                     style_metric_cards(border_left_color="None",
                                        border_radius_px=15)
     else:
+        st.markdown("""---""")
         st.markdown(f'<h1 style="text-align: center;">not yet...</h1>',
                     unsafe_allow_html=True)
     st.markdown("""---""")
 
 
 def handle_input(data, selected_input):
-
+    if (data == "") or (data is None):
+        return (None, None)
     tokens_count_by_model = {}
+    text = ""
+    is_error = False
 
     if selected_input == "Text":
         tokens_count_by_model = populate_tokens_count(data)
+        text = data
 
     elif selected_input == "Single Webpage":
-        text = ""
         try:
             if data:
                 docs = WebBaseLoader(data).load()
@@ -86,6 +100,7 @@ def handle_input(data, selected_input):
                     text += doc.page_content
                 tokens_count_by_model = populate_tokens_count(text)
         except Exception as e:
+            is_error = True
             st.error(e)
 
     elif selected_input == "PDF":
@@ -96,10 +111,10 @@ def handle_input(data, selected_input):
                 tokens_count_by_model = populate_tokens_count(text)
 
         except Exception as e:
+            is_error = True
             st.error(e)
 
     elif selected_input == "Online PDF":
-        text = ""
         try:
             if data:
                 docs = OnlinePDFLoader(data).load()
@@ -107,12 +122,30 @@ def handle_input(data, selected_input):
                     text += doc.page_content
                 tokens_count_by_model = populate_tokens_count(text)
         except Exception as e:
+            is_error = True
             st.error(e)
 
     elif selected_input == "Tokens":
         for model_type, _ in MODEL_TO_PRICING.items():
             for model_name in MODEL_TO_PRICING[model_type]:
                 tokens_count_by_model[model_name] = data
+
+    elif selected_input == "YouTube":
+        try:
+            if data:
+                YoutubeTranscriptReader = download_loader(
+                    "YoutubeTranscriptReader")
+                loader = YoutubeTranscriptReader()
+                llama_docs = loader.load_data(ytlinks=[data])
+                for doc in llama_docs:
+                    text += doc.text
+                tokens_count_by_model = populate_tokens_count(text)
+        except Exception as e:
+            is_error = True
+            st.error(e)
+
+    if is_error:
+        return (None, None)
 
     df = pd.DataFrame(
         np.array([[
@@ -128,7 +161,7 @@ def handle_input(data, selected_input):
     )
     df["Price"] = df["Price"].astype(float)
     df["Token Count"] = df["Token Count"].astype(int)
-    return df
+    return (df, text)
 
 
 def populate_tokens_count(text):
